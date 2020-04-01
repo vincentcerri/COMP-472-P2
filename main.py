@@ -35,10 +35,18 @@ if __name__ == "__main__":
     train_filename = ""
     test_filename = ""
 
+    # dictionary list is a list of all the possible models that we will be using
+    models = dict()
     ca_model = dict()
     eu_model = dict()
     es_model = dict()
     en_model = dict()
+    pt_model = dict()
+    models['ca'] = ca_model
+    models['eu'] = eu_model
+    models['es'] = es_model
+    models['en'] = en_model
+    models['pt'] = pt_model
 
     if vocabulary == 0:
         vocab_list = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
@@ -59,31 +67,39 @@ if __name__ == "__main__":
         for gram in my_bigrams:
             # we dont want " " included in our dictionary as it is not part of the vocabulary
             if not (gram[0] not in vocab_list or gram[1] not in vocab_list):
-                if language == "ca":
-                    if gram not in ca_model.keys():
-                        ca_model[gram] = 1
-                    else:
-                        ca_model[gram] += 1
-                elif language == "eu":
-                    if gram not in eu_model.keys():
-                        eu_model[gram] = 1
-                    else:
-                        eu_model[gram] += 1
-                elif language == "es":
-                    if gram not in es_model.keys():
-                        es_model[gram] = 1
-                    else:
-                        es_model[gram] += 1
-                elif language == "en":
-                    if gram not in en_model.keys():
-                        en_model[gram] = 1
-                    else:
-                        en_model[gram] += 1
+                if language not in models.keys():
+                    print ("sorry that languge doesn't have a modle")
                 else:
-                    print("sorry that language doesn't have a model")
-
+                    if gram not in models[language].keys():
+                        models[language][gram] = 1
+                    else:
+                        models[language][gram] += 1
         fileInput = f.readline()
     f.close()
+
+
+    # lets convert each of the models to a probability instead of a count
+    for language, dictionary in models.items():
+        nmb_items = 0
+        print("\nModel langauge:", language)
+        print(dictionary)
+
+        for key in dictionary.keys():
+            nmb_items += dictionary[key]
+        for k in dictionary.keys():
+            dictionary[k] = dictionary[k] / float (nmb_items)
+
+    for key, dictionary in models.items():
+        print(key, " : ", dictionary)
+
+
+
+
+
+
+
+
+
 
     sentence = "this is a foo bar sentences and i want to ngramize it"
     n = 3
