@@ -11,23 +11,15 @@ from nltk import ngrams, everygrams, pprint
 import nltk
 from nltk.probability import FreqDist
 from _collections import defaultdict
-#nltk.download('punkt')
 
-#def run_report(self, vocab, ngram_size, smooth_value):
-    #if vocab == 0:
-    #    # 0 -> Fold the corpus to lowercase and use only the 26 letters of the alphabet [a-z]
-    #elif vocab == 1:
-    #    # 1 -> Distinguish up and low cases and use only the 26 letters of the alphabet [a-z, A-Z]
-    #elif vocab == 2:
-    #    # 2 -> Distinguish up and low cases and use all characters accepted by the built-in isalpha() method
 
 if __name__ == "__main__":
 
-    vocabulary = 0
+    vocabulary = 1
     # 0 -> Fold the corpus to lowercase and use only the 26 letters of the alphabet [a-z]
     # 1 -> Distinguish up and low cases and use only the 26 letters of the alphabet [a-z, A-Z]
     # 2 -> Distinguish up and low cases and use all characters accepted by the built-in isalpha() method
-    n_gram_size = 0
+    n_gram_size = 0  # n-gram indicates into how many characters we should be splitting up the strings
     # 1 -> character unigrams
     # 2 -> character bigrams
     # 3 -> character trigrams
@@ -35,24 +27,31 @@ if __name__ == "__main__":
     train_filename = ""
     test_filename = ""
 
-    # dictionary list is a list of all the possible models that we will be using
+    # models is a dictionary of all the possible models that we will be using
     models = dict()
     ca_model = dict()
     eu_model = dict()
     es_model = dict()
     en_model = dict()
+    gl_model = dict()
     pt_model = dict()
     models['ca'] = ca_model
     models['eu'] = eu_model
     models['es'] = es_model
     models['en'] = en_model
+    models['gl'] = gl_model
     models['pt'] = pt_model
 
     if vocabulary == 0:
         vocab_list = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
                       't', 'u', 'v', 'w', 'x', 'y', 'z']
+    elif vocabulary == 1:
+        vocab_list = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
+                      't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+                      'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
-    f = open("C:\\Users\\vince\\OneDrive - Concordia University - Canada\\CONCORDIA\\Winter 2020\\COMP 472\\Project2\\training-tweets.txt", "r", encoding="utf8")
+    # we will start by reading from the training tweets file to create our models
+    f = open("training-tweets.txt", "r", encoding="utf8")
     fileInput = f.readline()
 
     # this is the loop that reads the file input line by line
@@ -68,7 +67,7 @@ if __name__ == "__main__":
             # we dont want " " included in our dictionary as it is not part of the vocabulary
             if not (gram[0] not in vocab_list or gram[1] not in vocab_list):
                 if language not in models.keys():
-                    print ("sorry that languge doesn't have a modle")
+                    print("sorry that language doesn't have a model")
                 else:
                     if gram not in models[language].keys():
                         models[language][gram] = 1
@@ -87,11 +86,36 @@ if __name__ == "__main__":
         for key in dictionary.keys():
             nmb_items += dictionary[key]
         for k in dictionary.keys():
-            dictionary[k] = dictionary[k] / float (nmb_items)
+            dictionary[k] = dictionary[k] / float(nmb_items)
 
     for key, dictionary in models.items():
         print(key, " : ", dictionary)
 
+    # to avoid arithmetic underflow work in log10 space
+    # this means that instead of doing the product of probabilities, we instead add the log of the probabilities
+
+
+    # now that we have models with the probabilities, we want to look at the test set to see if we can determine the language of each tweet.
+    # read from the test files and try determining the language
+    f = open("test-tweets-given.txt", "r", encoding="utf-8")
+    fileInput = f.readline()
+
+    solution_file = open("trace_myModel", "w", encoding="utf-8")  # this is the solution file that we will write to
+
+    # this is the loop that reads the file input line by line
+    while fileInput:
+        # print(fileInput)
+        tweet_id = fileInput.split("\t")[0]
+        tweet_author = fileInput.split("\t")[1]
+        tweet_language = fileInput.split("\t")[2]
+        tweet = fileInput.split("\t")[3]
+
+        print(tweet)
+
+        solution_file.write(tweet)
+
+        fileInput = f.readline()
+    f.close()
 
 
 
@@ -101,60 +125,6 @@ if __name__ == "__main__":
 
 
 
-    sentence = "this is a foo bar sentences and i want to ngramize it"
-    n = 3
-    #bigrams = ngrams(sentence.split(), n)
-
-    #list(everygrams(sentence, 2, 2))
-
-    #for grams in list(everygrams(sentence, 2, 2)):
-    #    print(grams)
-
-    #for grams in bigrams:
-    #    print(grams)
-
-    #y = []
-    #for x in range(len(sentence) - n + 1):
-    #    y.append(sentence[x:x+n])
-    #print(y)
-
-
-    # must apply the chain rule when calculating the probability
-    # how do we have the probabilities? Create a dictionary of terms and their probabilities based on the data set.
-
-
-    my_bigrams = list(ngrams(sentence, 2))
-    #my_trigrams = list(ngrams(sentence, 3))
-
-    #print (my_bigrams)
-    #print (my_trigrams)
-
-    # create an empy dictionary to store the bigram model
-    # the format will be [ ('a','b') , count ]
-    model = dict()
-    nmb_items = 0
-    total_prob = 0.0
-
-    for gram in my_bigrams:
-        # we dont want " " included in our dictionary as it is not part of the vocabulary
-        if not (gram[0] not in vocab_list or gram[1] not in vocab_list):
-            if gram not in model.keys():
-                model[gram] = 1
-            else:
-                model[gram] += 1
-            nmb_items += 1
-
-    print("Number of items: ", nmb_items)
-
-    # convert from count to a probability
-    for k in model.keys():
-        model[k] = model[k] / float(nmb_items)
-
-    print(sorted(((v, k) for k, v in model.items()), reverse=True))  # to print out the sorted dictionary based on probabilities
-
-    for k in model.keys():
-        total_prob += model[k]
-    print(total_prob)
 
 
 
