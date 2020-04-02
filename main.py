@@ -4,6 +4,7 @@
 # COMP 472 - Artificial Intelligence
 # Sunday, April 5th, 2020
 #
+import math
 
 import numpy as np
 import sys
@@ -12,10 +13,41 @@ import nltk
 from nltk.probability import FreqDist
 from _collections import defaultdict
 
+def determine_language(tweet):
+    lowest_probability = 1.0  # 1.0 is the highest possible probability so we will update this value with the calculated results
+    language = ""
+    for model in models:
+        new_probability = determine_probability(model, tweet)
+
+        if (new_probability < lowest_probability):
+            lowest_probability = new_probability
+            language = model
+    return language
+
+def determine_probability(model, tweet):
+    probability = 1.0
+    tweet_bigram = list(ngrams(tweet.lower(), 2))
+    print(model)
+    print(models[model])
+
+    for gram in tweet_bigram:
+        if not (gram[0] not in vocab_list or gram[1] not in vocab_list):
+            # what if the gram is not in the model? This is when we will need to be using smoothing.
+            if gram not in models[model]:
+                print ("Gram not in model. Needs smoothing")
+                # this is temporary until we add smoothing
+            else:
+                #print(gram)
+                #print(models[model][gram])
+                #probability = probability * models[model][gram]   # multiply by the proability of getting the 2 character string
+                probability = probability + math.log(models[model][gram], 10)  # using the addition of log base 10 for the probability
+    print(model, " : ", probability)
+    return probability
+
 
 if __name__ == "__main__":
 
-    vocabulary = 1
+    vocabulary = 0
     # 0 -> Fold the corpus to lowercase and use only the 26 letters of the alphabet [a-z]
     # 1 -> Distinguish up and low cases and use only the 26 letters of the alphabet [a-z, A-Z]
     # 2 -> Distinguish up and low cases and use all characters accepted by the built-in isalpha() method
@@ -61,7 +93,7 @@ if __name__ == "__main__":
         string_to_add = fileInput.split("\t")[3]
         print(string_to_add)
 
-        my_bigrams = list(ngrams(string_to_add, 2))
+        my_bigrams = list(ngrams(string_to_add.lower(), 2))  #here we are converting the string to lower case
 
         for gram in my_bigrams:
             # we dont want " " included in our dictionary as it is not part of the vocabulary
@@ -110,9 +142,11 @@ if __name__ == "__main__":
         tweet_language = fileInput.split("\t")[2]
         tweet = fileInput.split("\t")[3]
 
+        language = determine_language(tweet)
+
         print(tweet)
 
-        solution_file.write(tweet)
+        solution_file.write(tweet_id)
 
         fileInput = f.readline()
     f.close()
