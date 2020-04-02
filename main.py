@@ -14,12 +14,12 @@ from nltk.probability import FreqDist
 from _collections import defaultdict
 
 def determine_language(tweet):
-    lowest_probability = 1.0  # 1.0 is the highest possible probability so we will update this value with the calculated results
+    lowest_probability = 0.0  # 1.0 is the highest possible probability so we will update this value with the calculated results
     language = ""
     for model in models:
         new_probability = determine_probability(model, tweet)
 
-        if (new_probability < lowest_probability):
+        if (new_probability > lowest_probability):
             lowest_probability = new_probability
             language = model
     return language
@@ -27,8 +27,8 @@ def determine_language(tweet):
 def determine_probability(model, tweet):
     probability = 1.0
     tweet_bigram = list(ngrams(tweet.lower(), 2))
-    print(model)
-    print(models[model])
+    #print(model)
+    #print(models[model])
 
     for gram in tweet_bigram:
         if not (gram[0] not in vocab_list or gram[1] not in vocab_list):
@@ -37,12 +37,14 @@ def determine_probability(model, tweet):
                 print ("Gram not in model. Needs smoothing")
                 # this is temporary until we add smoothing
             else:
-                #print(gram)
-                #print(models[model][gram])
                 #probability = probability * models[model][gram]   # multiply by the proability of getting the 2 character string
                 probability = probability + math.log(models[model][gram], 10)  # using the addition of log base 10 for the probability
-    print(model, " : ", probability)
-    return probability
+    #print(model, " : log probability = ", probability)
+    #print(model, " : actual probability = ", math.exp(probability))
+    # note to self.
+    # log(P(A,B,C)) = log(P(A)) + log(P(B)) + log(P(C))
+    # P(A,B,C) = e ^ log(P(A,B,C))
+    return math.exp(probability)
 
 
 if __name__ == "__main__":
@@ -91,19 +93,17 @@ if __name__ == "__main__":
     for model in models:
         if (n_gram_size == 1):
             for i in vocab_list:
-                models[model][i] = 0
+                models[model][i] = 1
         elif (n_gram_size == 2):
             for i in vocab_list:
                 for j in vocab_list:
-                    models[model][(i, j)] = 0
+                    models[model][(i, j)] = 1
         elif (n_gram_size == 3):
             for i in vocab_list:
                 for j in vocab_list:
                     for k in vocab_list:
-                        models[model][(i, j, k)] = 0
+                        models[model][(i, j, k)] = 1
         print(models[model])
-
-
 
     # this is the loop that reads the file input line by line
     while fileInput:
@@ -123,14 +123,10 @@ if __name__ == "__main__":
                 if language not in models.keys():
                     print("sorry that language doesn't have a model")
                 else:
-                    if gram not in models[language].keys():
-                        models[language][gram] = 1
-                    else:
-                        models[language][gram] += 1
+                    models[language][gram] += 1
 
         fileInput = f.readline()
     f.close()
-
 
     # lets convert each of the models to a probability instead of a count. We should also apply the smoothing value here
     for language, dictionary in models.items():
@@ -152,12 +148,16 @@ if __name__ == "__main__":
     # this means that instead of doing the product of probabilities, we instead add the log of the probabilities
 
 
-    # now that we have models with the probabilities, we want to look at the test set to see if we can determine the language of each tweet.
+    # now that we have models with the probabilities, we want to look at the test set to see if we can determine the
+    # language of each tweet.
     # read from the test files and try determining the language
     f = open("test-tweets-given.txt", "r", encoding="utf-8")
     fileInput = f.readline()
 
     solution_file = open("trace_myModel", "w", encoding="utf-8")  # this is the solution file that we will write to
+
+    total_lines = 0
+    total_correct = 0
 
     # this is the loop that reads the file input line by line
     while fileInput:
@@ -168,10 +168,18 @@ if __name__ == "__main__":
         tweet = fileInput.split("\t")[3]
 
         language = determine_language(tweet)
+        print(language)
 
         print(tweet)
 
-        solution_file.write(tweet_id)
+        solution_file.write((tweet_id + "\tactual language: " + tweet_language + "\tpredicted language:" + language + "\n"))
+
+        if tweet_language == language:
+            total_correct += 1
+        total_lines += 1
 
         fileInput = f.readline()
+
+    total_percentage = float(total_correct / total_lines) * 100
+    solution_file.write(("total lines: " + str(total_lines) + "\ttotal correct: " + str(total_correct) + "\tpercentage correct: " + str(total_percentage) + "%\n"))
     f.close()
