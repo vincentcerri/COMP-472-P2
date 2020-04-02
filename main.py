@@ -51,7 +51,7 @@ if __name__ == "__main__":
     # 0 -> Fold the corpus to lowercase and use only the 26 letters of the alphabet [a-z]
     # 1 -> Distinguish up and low cases and use only the 26 letters of the alphabet [a-z, A-Z]
     # 2 -> Distinguish up and low cases and use all characters accepted by the built-in isalpha() method
-    n_gram_size = 0  # n-gram indicates into how many characters we should be splitting up the strings
+    n_gram_size = 2  # n-gram indicates into how many characters we should be splitting up the strings
     # 1 -> character unigrams
     # 2 -> character bigrams
     # 3 -> character trigrams
@@ -86,6 +86,25 @@ if __name__ == "__main__":
     f = open("training-tweets.txt", "r", encoding="utf8")
     fileInput = f.readline()
 
+    # lets test out using add-one smoothing here
+    # we want to create the frequency array for each model depending on if we are using 1,2 or 3 character ngrams
+    for model in models:
+        if (n_gram_size == 1):
+            for i in vocab_list:
+                models[model][i] = 0
+        elif (n_gram_size == 2):
+            for i in vocab_list:
+                for j in vocab_list:
+                    models[model][(i, j)] = 0
+        elif (n_gram_size == 3):
+            for i in vocab_list:
+                for j in vocab_list:
+                    for k in vocab_list:
+                        models[model][(i, j, k)] = 0
+        print(models[model])
+
+
+
     # this is the loop that reads the file input line by line
     while fileInput:
         #print(fileInput)
@@ -93,11 +112,14 @@ if __name__ == "__main__":
         string_to_add = fileInput.split("\t")[3]
         print(string_to_add)
 
-        my_bigrams = list(ngrams(string_to_add.lower(), 2))  #here we are converting the string to lower case
-
-        for gram in my_bigrams:
-            # we dont want " " included in our dictionary as it is not part of the vocabulary
-            if not (gram[0] not in vocab_list or gram[1] not in vocab_list):
+        my_ngram = list(ngrams(string_to_add.lower(), n_gram_size))
+        for gram in my_ngram:
+            # we dont want ' " included in our dictionary as it is not part of the vocabulary
+            is_gram_in_vocab = True
+            for i in range(n_gram_size):  # loop from 0 to n_gram_size - 1
+                if (gram[i] not in vocab_list):
+                    is_gram_in_vocab = False
+            if is_gram_in_vocab:
                 if language not in models.keys():
                     print("sorry that language doesn't have a model")
                 else:
@@ -105,11 +127,12 @@ if __name__ == "__main__":
                         models[language][gram] = 1
                     else:
                         models[language][gram] += 1
+
         fileInput = f.readline()
     f.close()
 
 
-    # lets convert each of the models to a probability instead of a count
+    # lets convert each of the models to a probability instead of a count. We should also apply the smoothing value here
     for language, dictionary in models.items():
         nmb_items = 0
         print("\nModel langauge:", language)
@@ -122,6 +145,8 @@ if __name__ == "__main__":
 
     for key, dictionary in models.items():
         print(key, " : ", dictionary)
+
+
 
     # to avoid arithmetic underflow work in log10 space
     # this means that instead of doing the product of probabilities, we instead add the log of the probabilities
@@ -150,18 +175,3 @@ if __name__ == "__main__":
 
         fileInput = f.readline()
     f.close()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
