@@ -26,11 +26,14 @@ def determine_language(tweet):
 
 def determine_probability(model, tweet):
     probability = math.log((vocab_portion[model] / total_vocab), 10)
-    tweet_bigram = list(ngrams(tweet.lower(), 2))
+    if (vocabulary == 0):
+        tweet_gram = list(ngrams(tweet.lower(), n_gram_size))
+    else:
+        tweet_gram = list(ngrams(tweet, n_gram_size))
     #print(model)
     #print(models[model])
 
-    for gram in tweet_bigram:
+    for gram in tweet_gram:
         if not (gram[0] not in vocab_list or gram[1] not in vocab_list):
             # what if the gram is not in the model? This is when we will need to be using smoothing.
             if gram not in models[model]:
@@ -118,13 +121,23 @@ if __name__ == "__main__":
         total_vocab += 1
         print(string_to_add)
 
-        my_ngram = list(ngrams(string_to_add.lower(), n_gram_size))
+        if (vocabulary == 0):
+            my_ngram = list(ngrams(string_to_add.lower(), n_gram_size))
+        else:
+            my_ngram = list(ngrams(string_to_add, n_gram_size))
+
         for gram in my_ngram:
             # we dont want ' " included in our dictionary as it is not part of the vocabulary
             is_gram_in_vocab = True
-            for i in range(n_gram_size):  # loop from 0 to n_gram_size - 1
-                if (gram[i] not in vocab_list):
-                    is_gram_in_vocab = False
+            if (vocabulary == 2):
+                for i in range(n_gram_size):  # loop from 0 to n_gram_size - 1
+                    if (not gram[i].isalpha()):
+                        is_gram_in_vocab = False
+            else:
+                for i in range(n_gram_size):  # loop from 0 to n_gram_size - 1
+                    if (gram[i] not in vocab_list):
+                        is_gram_in_vocab = False
+            
             if is_gram_in_vocab:
                 if language not in models.keys():
                     print("sorry that language doesn't have a model")
