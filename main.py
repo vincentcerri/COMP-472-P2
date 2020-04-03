@@ -25,7 +25,7 @@ def determine_language(tweet):
     return language
 
 def determine_probability(model, tweet):
-    probability = 1.0
+    probability = math.log((vocab_portion[model] / total_vocab), 10)
     tweet_bigram = list(ngrams(tweet.lower(), 2))
     #print(model)
     #print(models[model])
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     # 1 -> character unigrams
     # 2 -> character bigrams
     # 3 -> character trigrams
-    smoothing_value = 0  # a real in the interval [0...1]
+    smoothing_value = 1  # a real in the interval [0...1]
     train_filename = ""
     test_filename = ""
 
@@ -75,6 +75,10 @@ if __name__ == "__main__":
     models['en'] = en_model
     models['gl'] = gl_model
     models['pt'] = pt_model
+    
+    # this tracks the amount of training lines read, and how many per language
+    total_vocab = 0
+    vocab_portion = { 'ca':0, 'eu':0, 'es':0, 'en':0, 'gl':0, 'pt':0 }
 
     if vocabulary == 0:
         vocab_list = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
@@ -84,32 +88,34 @@ if __name__ == "__main__":
                       't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
                       'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
-    # we will start by reading from the training tweets file to create our models
-    f = open("training-tweets.txt", "r", encoding="utf8")
-    fileInput = f.readline()
-
-    # lets test out using add-one smoothing here
+    # this adds delta smoothing
     # we want to create the frequency array for each model depending on if we are using 1,2 or 3 character ngrams
     for model in models:
         if (n_gram_size == 1):
             for i in vocab_list:
-                models[model][i] = 1
-        elif (n_gram_size == 2):
+                models[model][i] = smoothing_value                
+        elif (n_gram_size == 2):            
             for i in vocab_list:
                 for j in vocab_list:
-                    models[model][(i, j)] = 1
+                    models[model][(i, j)] = smoothing_value
         elif (n_gram_size == 3):
             for i in vocab_list:
                 for j in vocab_list:
                     for k in vocab_list:
-                        models[model][(i, j, k)] = 1
+                        models[model][(i, j, k)] = smoothing_value
         print(models[model])
+
+    # we will start by reading from the training tweets file to create our models
+    f = open("training-tweets.txt", "r", encoding="utf8")
+    fileInput = f.readline()
 
     # this is the loop that reads the file input line by line
     while fileInput:
         #print(fileInput)
         language = fileInput.split("\t")[2]
         string_to_add = fileInput.split("\t")[3]
+        vocab_portion[language] += 1
+        total_vocab += 1
         print(string_to_add)
 
         my_ngram = list(ngrams(string_to_add.lower(), n_gram_size))
