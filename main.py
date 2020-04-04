@@ -6,13 +6,7 @@
 #
 import math
 from decimal import Decimal
-
-import numpy as np
-import sys
 from nltk import ngrams, everygrams, pprint
-import nltk
-from nltk.probability import FreqDist
-from _collections import defaultdict
 
 
 class NaturalLanguageProcessing:
@@ -49,6 +43,10 @@ class NaturalLanguageProcessing:
 
         self.tp_count = {'ca': 0, 'eu': 0, 'es': 0, 'en': 0, 'gl': 0, 'pt': 0}
         self.fp_count = {'ca': 0, 'eu': 0, 'es': 0, 'en': 0, 'gl': 0, 'pt': 0}
+        self.actual_language_count = {'ca': 0, 'eu': 0, 'es': 0, 'en': 0, 'gl': 0, 'pt': 0}
+        self.precision_values = {'ca': 0.0, 'eu': 0.0, 'es': 0.0, 'en': 0.0, 'gl': 0.0, 'pt': 0.0}
+        self.recall_values = {'ca': 0.0, 'eu': 0.0, 'es': 0.0, 'en': 0.0, 'gl': 0.0, 'pt': 0.0}
+        self.f1_values = {'ca': 0.0, 'eu': 0.0, 'es': 0.0, 'en': 0.0, 'gl': 0.0, 'pt': 0.0}
         self.trace_probability = 0.0
 
     def produce_output(self, vocabulary, n_gram_size, smoothing_value, train_name, test_name):
@@ -75,12 +73,10 @@ class NaturalLanguageProcessing:
 
         # this is the loop that reads the file input line by line
         while fileInput:
-            # print(fileInput)
             language = fileInput.split("\t")[2]
             string_to_add = fileInput.split("\t")[3]
             self.vocab_portion[language] += 1
             self.total_vocab += 1
-            print(string_to_add)
 
             if vocabulary == 0:
                 my_ngram = list(ngrams(string_to_add.lower(), n_gram_size))  # convert the tweet to lower case
@@ -119,8 +115,8 @@ class NaturalLanguageProcessing:
         # lets convert each of the models to a probability instead of a count. We should also apply the smoothing value here
         for language, dictionary in self.models.items():
             nmb_items = 0
-            print("\nModel langauge:", language)
-            print(dictionary)
+            #print("\nModel langauge:", language)
+            #print(dictionary)
 
             for k in dictionary.keys():
                 # no need to add the smoothing value to the numerator as it is already implemented when counting
@@ -152,6 +148,8 @@ class NaturalLanguageProcessing:
 
             language = self.determine_language(tweet)
 
+            self.actual_language_count[tweet_language] += 1
+
             if tweet_language == language:
                 total_correct += 1
                 language_match = "correct"
@@ -169,8 +167,9 @@ class NaturalLanguageProcessing:
         # calculate the accuracy
         accuracy = float(total_correct / total_lines)
         overall_eval_file.write(str('{:.4f}'.format(accuracy)) + "\n")
+
         # calculate the precision
-        # precision = TP / (TP + FP)
+        # precision = TP / (TP + FP) = (# of correct guesses by L) / (# of correct + # of wrong)
         # TP: Your system designated a tweet a certain language. The tweet is in fact that language.
         # FP: Your system designated a tweet a certain langauge. The tweet is not actually that language. The system is wrong
         print(self.vocab_portion)
@@ -179,17 +178,50 @@ class NaturalLanguageProcessing:
                 precision = 0
             else:
                 precision = self.tp_count[lang] / (self.tp_count[lang] + self.fp_count[lang])
+            self.precision_values[lang] = precision
             overall_eval_file.write(str('{:.4f}'.format(precision)) + "  ")
         overall_eval_file.write("\n")
+
         # calculate the recall
-        # recall = TP / (TP + FN)
-        # FN: Your system designated a tweet as not a certain language. The tweet was in fact that language
-        # IM NOT SURE WHAT THE DIFFERENCE IS BETWEEN FN AND FP
+        # recall = TP / (TP + FN) = (# correct guesses by L) / (# of times the actual answer was L)
+        for lang in self.models:
+            if self.tp_count[lang] == 0:
+                recall = 0
+            else:
+                recall = self.tp_count[lang] / self.actual_language_count[lang]
+            self.recall_values[lang] = recall
+            overall_eval_file.write(str('{:.4f}'.format(recall)) + "  ")
+        overall_eval_file.write("\n")
 
         # calcualte the F1 measure
+        # F = (B^2 + 1)PR/(B^2P+R) -> F1 means B = 1
+        for lang in self.models:
+            if self.precision_values[lang] == 0 or self.recall_values[lang] == 0:
+                f1 = 0
+            else:
+                f1 = float((2 * self.precision_values[lang] * self.recall_values[lang]) / (self.precision_values[lang] + self.recall_values[lang]))
+            self.f1_values[lang] = f1
+            overall_eval_file.write(str('{:.4f}'.format(f1)) + "  ")
+        overall_eval_file.write("\n")
 
         # calcualte the macro-F1 and weighed-average-F1
+        # macro-F1 is just the average of all F1 values
+        macro_f1_sum = 0.0
+        macro_f1_count = 0
+        for lang in self.models:
+            macro_f1_count += 1
+            macro_f1_sum += self.f1_values[lang]
+        macro_f1_value = float(macro_f1_sum / macro_f1_count)
 
+        # weighted average is using the count of each of the langauges in the test file
+        macro_weighted_count = 0
+        macro_weighted_sum = 0.0
+        for lang in self.models:
+            macro_weighted_count += self.actual_language_count[lang]
+            macro_weighted_sum += self.actual_language_count[lang] * self.f1_values[lang]
+        macro_weighted_value = float(macro_weighted_sum / macro_weighted_count)
+
+        overall_eval_file.write(str('{:.4f}'.format(macro_f1_value)) + "  " + str('{:.4f}'.format(macro_weighted_value)) + "\n")
 
         solution_trace_file.close()
         overall_eval_file.close()
@@ -235,15 +267,28 @@ class NaturalLanguageProcessing:
 
 if __name__ == "__main__":
     nlp = NaturalLanguageProcessing()
-    nlp.produce_output(0, 1, 0.5, "training-tweets.txt", "test-tweets-given.txt")
-    nlp.produce_output(1, 1, 0.5, "training-tweets.txt", "test-tweets-given.txt")
-    nlp.produce_output(2, 1, 0.5, "training-tweets.txt", "test-tweets-given.txt")
-    nlp.produce_output(0, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")
-    nlp.produce_output(1, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")
-    nlp.produce_output(2, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")
-    nlp.produce_output(0, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")
-    nlp.produce_output(1, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")
-    nlp.produce_output(2, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")
+
+    #nlp.produce_output(0, 1, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.6831
+    #nlp.produce_output(1, 1, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.6977
+    #nlp.produce_output(2, 1, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.5676
+    #nlp.produce_output(0, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.8420
+    #nlp.produce_output(1, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.8441
+    #nlp.produce_output(2, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.5676
+    #nlp.produce_output(0, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.9029
+    #nlp.produce_output(1, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.7704
+    #nlp.produce_output(2, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")
+
+    #nlp.produce_output(0, 1, 0.2, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.6831
+    #nlp.produce_output(1, 1, 0.2, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.6970
+    #nlp.produce_output(2, 1, 0.2, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.5676
+    #nlp.produce_output(0, 2, 0.2, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.8420
+    #nlp.produce_output(1, 2, 0.2, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.8451
+    #nlp.produce_output(2, 2, 0.2, "training-tweets.txt", "test-tweets-given.txt")  # accuracy =
+    #nlp.produce_output(0, 3, 0.2, "training-tweets.txt", "test-tweets-given.txt")  # accuracy =
+    #nlp.produce_output(1, 3, 0.2, "training-tweets.txt", "test-tweets-given.txt")  # accuracy =
+    #nlp.produce_output(2, 3, 0.2, "training-tweets.txt", "test-tweets-given.txt")  # accuracy =
+
+    nlp.produce_output(0, 3, 0.3, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.9029
 
     print("WE ARE DONE WITH THE TESTS")
 
