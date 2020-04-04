@@ -33,12 +33,13 @@ def determine_probability(model, tweet):
     #print(model)
     #print(models[model])
 
+    # calculating probability for non existant grams (i.e. smoothing value only) outside of for loop for lessened computation load
+    smooth_probability_log = math.log((smoothing_value/float(ngram_portion[model] + smoothing_value*(math.pow(vocab_list_size,n_gram_size)))), 10)
     for gram in tweet_gram:
         if not (gram[0] not in vocab_list or gram[1] not in vocab_list):
             # what if the gram is not in the model? This is when we will need to be using smoothing.
             if gram not in models[model]:
-                print ("Gram not in model. Needs smoothing")
-                # this is temporary until we add smoothing
+                probability = probability + smooth_probability_log 
             else:
                 #probability = probability * models[model][gram]   # multiply by the proability of getting the 2 character string
                 probability = probability + math.log(models[model][gram], 10)  # using the addition of log base 10 for the probability
@@ -82,14 +83,21 @@ if __name__ == "__main__":
     # this tracks the amount of training lines read, and how many per language
     total_vocab = 0
     vocab_portion = { 'ca':0, 'eu':0, 'es':0, 'en':0, 'gl':0, 'pt':0 }
+    # this tracks the amount of traning ngrams per language
+    ngram_portion = { 'ca':0, 'eu':0, 'es':0, 'en':0, 'gl':0, 'pt':0 }
 
     if vocabulary == 0:
         vocab_list = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
                       't', 'u', 'v', 'w', 'x', 'y', 'z']
-    elif vocabulary == 1:
+        vocab_list_size = 26
+    elif vocabulary == 1 or 2:
         vocab_list = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
                       't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
                       'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+        vocab_list_size = 52
+    elif vocabulary == 2:
+        vocab_list = [ ]
+        vocab_list_size = 0
 
     # this adds delta smoothing
     # we want to create the frequency array for each model depending on if we are using 1,2 or 3 character ngrams
@@ -133,16 +141,27 @@ if __name__ == "__main__":
                 for i in range(n_gram_size):  # loop from 0 to n_gram_size - 1
                     if (not gram[i].isalpha()):
                         is_gram_in_vocab = False
+                    elif (gram[i] not in vocab_list and gram[i].isalpha()):
+                        vocab_list_size += 1
+                        vocab_list.append(gram[i])
+                if is_gram_in_vocab:
+                    if language not in models.keys():
+                        print("sorry that language doesn't have a model")
+                    elif gram not in models[language].keys():
+                        models[language][gram] = 1 + smoothing_value
+                    else:
+                        models[language][gram] += 1
+                        ngram_portion[language] += 1
             else:
                 for i in range(n_gram_size):  # loop from 0 to n_gram_size - 1
                     if (gram[i] not in vocab_list):
-                        is_gram_in_vocab = False
-            
-            if is_gram_in_vocab:
-                if language not in models.keys():
-                    print("sorry that language doesn't have a model")
-                else:
-                    models[language][gram] += 1
+                        is_gram_in_vocab = False            
+                if is_gram_in_vocab:
+                    if language not in models.keys():
+                        print("sorry that language doesn't have a model")
+                    else:
+                        models[language][gram] += 1
+                        ngram_portion[language] += 1
 
         fileInput = f.readline()
     f.close()
@@ -153,10 +172,10 @@ if __name__ == "__main__":
         print("\nModel langauge:", language)
         print(dictionary)
 
-        for key in dictionary.keys():
-            nmb_items += dictionary[key]
+       # for key in dictionary.keys():
+       #     nmb_items += dictionary[key]
         for k in dictionary.keys():
-            dictionary[k] = dictionary[k] / float(nmb_items)
+            dictionary[k] = (dictionary[k]) / float(ngram_portion[language] + smoothing_value*(math.pow(vocab_list_size,n_gram_size)))
 
     for key, dictionary in models.items():
         print(key, " : ", dictionary)
