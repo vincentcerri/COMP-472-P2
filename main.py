@@ -7,6 +7,7 @@
 # Sunday, April 5th, 2020
 #
 import math
+import re
 from decimal import Decimal
 from nltk import ngrams, everygrams, pprint
 
@@ -70,6 +71,13 @@ class NaturalLanguageProcessing:
             self.vocab_list_size = len(self.vocab_list)
         elif vocabulary == 2:
             self.vocab_list_size = 116766   # all possible characters from isalpha()
+        elif vocabulary == 3:
+            self.vocab_list = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
+                               's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+                               'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+                               'À', 'Á', 'Â', 'Ã', 'Ç', 'É', 'Ê', 'Ó', 'Ñ', 'Õ', 'Ü', 'Í', 'Ì', 'Ï', 'Ú', 
+                               'à', 'á', 'â', 'ã', 'ç', 'é', 'ê', 'ó', 'õ', 'ú', 'ü', 'ñ', 'í', 'ï', 'ì']
+            self.vocab_list_size = len(self.vocab_list)
 
         # we will start by reading from the training tweets file to create our models
         f = open(train_name, "r", encoding="utf8")
@@ -84,6 +92,9 @@ class NaturalLanguageProcessing:
 
             if vocabulary == 0:
                 my_ngram = list(ngrams(string_to_add.lower(), n_gram_size))  # convert the tweet to lower case
+            elif vocabulary == 3:
+                string_to_add = self.clean_string(string_to_add)
+                my_ngram = list(ngrams(string_to_add, n_gram_size)) 
             else:
                 my_ngram = list(ngrams(string_to_add, n_gram_size))  # leave the tweet as is
 
@@ -94,14 +105,7 @@ class NaturalLanguageProcessing:
                     for i in range(n_gram_size):  # loop from 0 to n_gram_size - 1 to determine if the gram is in the vocabulary
                         if not gram[i].isalpha():
                             is_gram_in_vocab = False
-                elif vocabulary == 3:
-                    for i in range(n_gram_size):  # loop from 0 to n_gram_size - 1 to determine if the gram is in the vocabulary
-                        if not gram[i].isalpha():
-                            is_gram_in_vocab = False  # if the gram is not isalpha() then we shouldn't add it to the list
-                        elif (gram[i] not in self.vocab_list and gram[i].isalpha()):   # if the gram is not in the vocab list BUT it isalpha() we want to add it in
-                            self.vocab_list_size += 1
-                            self.vocab_list.append(gram[i])
-                else:  # if vocab == 0 or 1
+                else:   # if vocab == 0 or 1
                     for i in range(n_gram_size):  # loop from 0 to n_gram_size - 1 to determine if the gram is in the vocabulary
                         if gram[i] not in self.vocab_list:
                             is_gram_in_vocab = False
@@ -154,6 +158,9 @@ class NaturalLanguageProcessing:
             tweet_author = fileInput.split("\t")[1]
             tweet_language = fileInput.split("\t")[2]
             tweet = fileInput.split("\t")[3]
+
+            if vocabulary == 3:
+                tweet = self.clean_string(tweet)
 
             language = self.determine_language(tweet)
 
@@ -235,6 +242,14 @@ class NaturalLanguageProcessing:
         solution_trace_file.close()
         overall_eval_file.close()
         f.close()
+    
+    def clean_string(self, string):
+        # remove any Twitter usernames and urls from string
+        stringClean = re.sub(r'@.+?\s', '', string)      # regular case of username followed by whitespace
+        stringClean = re.sub(r'@.+?$', '', stringClean)      # edge case where last 'word' is a username
+        stringClean = re.sub(r'''(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))''', '', stringClean)
+        # above line for cleaning urls by kerim of stackoverflow https://stackoverflow.com/questions/14081050/remove-all-forms-of-urls-from-a-given-string-in-python
+        return stringClean
 
     def determine_language(self, tweet):
         best_probability = 0.0  # 1.0 is the highest possible probability so we will update this value with the calculated results
@@ -245,7 +260,7 @@ class NaturalLanguageProcessing:
             if new_probability > best_probability:
                 best_probability = new_probability
                 language = model
-        return language
+        return language 
 
     def determine_probability(self, model, tweet):
         probability = math.log((self.vocab_portion[model] / self.total_vocab), 10)
