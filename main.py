@@ -1,6 +1,8 @@
 #
 # VINCENT CERRI
 # 40034135
+# SEAN HOWARD
+# 26346685
 # COMP 472 - Artificial Intelligence
 # Sunday, April 5th, 2020
 #
@@ -15,6 +17,7 @@ class NaturalLanguageProcessing:
         # 0 -> Fold the corpus to lowercase and use only the 26 letters of the alphabet [a-z]
         # 1 -> Distinguish up and low cases and use only the 26 letters of the alphabet [a-z, A-Z]
         # 2 -> Distinguish up and low cases and use all characters accepted by the built-in isalpha() method
+        # 3 -> Our custom BYOM
         self.n_gram_size = 1  # n-gram indicates into how many characters we should be splitting up the strings
         # 1 -> character unigrams
         # 2 -> character bigrams
@@ -65,6 +68,8 @@ class NaturalLanguageProcessing:
                                's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
                                'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
             self.vocab_list_size = len(self.vocab_list)
+        elif vocabulary == 2:
+            self.vocab_list_size = 116766   # all possible characters from isalpha()
 
         # we will start by reading from the training tweets file to create our models
         f = open(train_name, "r", encoding="utf8")
@@ -88,6 +93,10 @@ class NaturalLanguageProcessing:
                 if vocabulary == 2:
                     for i in range(n_gram_size):  # loop from 0 to n_gram_size - 1 to determine if the gram is in the vocabulary
                         if not gram[i].isalpha():
+                            is_gram_in_vocab = False
+                elif vocabulary == 3:
+                    for i in range(n_gram_size):  # loop from 0 to n_gram_size - 1 to determine if the gram is in the vocabulary
+                        if not gram[i].isalpha():
                             is_gram_in_vocab = False  # if the gram is not isalpha() then we shouldn't add it to the list
                         elif (gram[i] not in self.vocab_list and gram[i].isalpha()):   # if the gram is not in the vocab list BUT it isalpha() we want to add it in
                             self.vocab_list_size += 1
@@ -96,7 +105,6 @@ class NaturalLanguageProcessing:
                     for i in range(n_gram_size):  # loop from 0 to n_gram_size - 1 to determine if the gram is in the vocabulary
                         if gram[i] not in self.vocab_list:
                             is_gram_in_vocab = False
-                            # if vocab = 0, 1 or 2
                 if is_gram_in_vocab:
                     if language not in self.models.keys():
                         print("sorry that language doesn't have a model")
@@ -112,7 +120,6 @@ class NaturalLanguageProcessing:
 
         # lets convert each of the models to a probability instead of a count. We should also apply the smoothing value here
         for language, dictionary in self.models.items():
-            nmb_items = 0
             #print("\nModel langauge:", language)
             #print(dictionary)
 
@@ -253,7 +260,9 @@ class NaturalLanguageProcessing:
         for gram in tweet_gram:
             is_gram_in_vocab = True
             for j in range(self.n_gram_size):  # first determine if the gram is in the vocabulary. If not, we wont consider it
-                if gram[j] not in self.vocab_list:
+                if (self.vocabulary == 2 and not gram[j].isalpha()):     
+                    is_gram_in_vocab = False    # for vocabulary 2, any isalpha is in vocab
+                elif gram[j] not in self.vocab_list:
                     is_gram_in_vocab = False
             if is_gram_in_vocab:  # if the gram is actually in the vocabulary
                 if gram not in self.models[model]:  # if the gram is not in the model
@@ -290,7 +299,7 @@ if __name__ == "__main__":
     #nlp.produce_output(1, 3, 0.2, "training-tweets.txt", "test-tweets-given.txt")  # accuracy =
     #nlp.produce_output(2, 3, 0.2, "training-tweets.txt", "test-tweets-given.txt")  # accuracy =
 
-    nlp.produce_output(0, 3, 0.3, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.9029
+    nlp.produce_output(3, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.9029
 
     print("WE ARE DONE WITH THE TESTS")
 
