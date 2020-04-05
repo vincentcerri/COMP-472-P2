@@ -71,7 +71,7 @@ class NaturalLanguageProcessing:
             self.vocab_list_size = len(self.vocab_list)
         elif vocabulary == 2:
             self.vocab_list_size = 116766   # all possible characters from isalpha()
-        elif vocabulary == 3:
+        elif vocabulary == 3:  # vocab == 3 is our BYOM vocabulary
             self.vocab_list = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
                                's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
                                'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
@@ -105,16 +105,17 @@ class NaturalLanguageProcessing:
                     for i in range(n_gram_size):  # loop from 0 to n_gram_size - 1 to determine if the gram is in the vocabulary
                         if not gram[i].isalpha():
                             is_gram_in_vocab = False
-                else:   # if vocab == 0 or 1
+                else:   # if vocab == 0 or 1 or 3
                     for i in range(n_gram_size):  # loop from 0 to n_gram_size - 1 to determine if the gram is in the vocabulary
                         if gram[i] not in self.vocab_list:
                             is_gram_in_vocab = False
+                            break
                 if is_gram_in_vocab:
                     if language not in self.models.keys():
                         print("sorry that language doesn't have a model")
                     elif gram not in self.models[language].keys():
                         self.models[language][gram] = 1 + smoothing_value
-                        self.ngram_portion[language] += 1
+                        self.ngram_portion[language] += 1  # tracks the amount of training ngrams
                     else:
                         self.models[language][gram] += 1
                         self.ngram_portion[language] += 1
@@ -124,9 +125,8 @@ class NaturalLanguageProcessing:
 
         # lets convert each of the models to a probability instead of a count. We should also apply the smoothing value here
         for language, dictionary in self.models.items():
-            #print("\nModel langauge:", language)
-            #print(dictionary)
-
+            # print("\nModel langauge:", language)
+            # print(dictionary)
             for k in dictionary.keys():
                 # no need to add the smoothing value to the numerator as it is already implemented when counting
                 dictionary[k] = (dictionary[k]) / float(self.ngram_portion[language] + smoothing_value * (math.pow(self.vocab_list_size, n_gram_size)))
@@ -188,7 +188,6 @@ class NaturalLanguageProcessing:
         # precision = TP / (TP + FP) = (# of correct guesses by L) / (# of correct + # of wrong)
         # TP: Your system designated a tweet a certain language. The tweet is in fact that language.
         # FP: Your system designated a tweet a certain langauge. The tweet is not actually that language. The system is wrong
-        print(self.vocab_portion)
         for lang in self.models:
             if self.tp_count[lang] == 0:
                 precision = 0
@@ -229,7 +228,7 @@ class NaturalLanguageProcessing:
             macro_f1_sum += self.f1_values[lang]
         macro_f1_value = float(macro_f1_sum / macro_f1_count)
 
-        # weighted average is using the count of each of the langauges in the test file
+        # weighted average is using the count of each of the languages in the test file
         macro_weighted_count = 0
         macro_weighted_sum = 0.0
         for lang in self.models:
@@ -300,7 +299,7 @@ if __name__ == "__main__":
     #nlp.produce_output(0, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.8420
     #nlp.produce_output(1, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.8441
     #nlp.produce_output(2, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.5676
-    #nlp.produce_output(0, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.9029
+    nlp.produce_output(0, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.9029
     #nlp.produce_output(1, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.7704
     #nlp.produce_output(2, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")
 
@@ -314,7 +313,7 @@ if __name__ == "__main__":
     #nlp.produce_output(1, 3, 0.2, "training-tweets.txt", "test-tweets-given.txt")  # accuracy =
     #nlp.produce_output(2, 3, 0.2, "training-tweets.txt", "test-tweets-given.txt")  # accuracy =
 
-    nlp.produce_output(3, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.9029
+    #nlp.produce_output(3, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.9029
 
     print("WE ARE DONE WITH THE TESTS")
 
