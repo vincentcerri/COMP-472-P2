@@ -55,9 +55,15 @@ class NaturalLanguageProcessing:
         self.f1_values = {'ca': 0.0, 'eu': 0.0, 'es': 0.0, 'en': 0.0, 'gl': 0.0, 'pt': 0.0}
         self.trace_probability = 0.0
 
-    def produce_output(self, vocabulary, n_gram_size, smoothing_value, train_name, test_name):
+    def produce_output(self, vocabulary, n_gram_size, entered_smoothing_value, train_name, test_name):
         self.vocabulary = vocabulary
         self.n_gram_size = n_gram_size
+        if (entered_smoothing_value > 1):
+            smoothing_value = 1     # encase someone enters too big a number
+        elif (entered_smoothing_value < 0):
+            smoothing_value = 0     # encase someone enters a negative number
+        else:
+            smoothing_value = entered_smoothing_value
         self.smoothing_value = smoothing_value
 
         if vocabulary == 0:
@@ -70,6 +76,7 @@ class NaturalLanguageProcessing:
                                'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
             self.vocab_list_size = len(self.vocab_list)
         elif vocabulary == 2:
+            self.vocab_list = [ ]   # need to make sure it is blank encase another vocabulary was run prior
             self.vocab_list_size = 116766   # all possible characters from isalpha()
         elif vocabulary == 3:  # vocab == 3 is our BYOM vocabulary
             self.vocab_list = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
@@ -125,8 +132,9 @@ class NaturalLanguageProcessing:
 
         # lets convert each of the models to a probability instead of a count. We should also apply the smoothing value here
         for language, dictionary in self.models.items():
-            # print("\nModel langauge:", language)
-            # print(dictionary)
+            #print("\nModel langauge:", language)
+            #print(dictionary)
+
             for k in dictionary.keys():
                 # no need to add the smoothing value to the numerator as it is already implemented when counting
                 dictionary[k] = (dictionary[k]) / float(self.ngram_portion[language] + smoothing_value * (math.pow(self.vocab_list_size, n_gram_size)))
@@ -135,8 +143,9 @@ class NaturalLanguageProcessing:
         # this means that instead of doing the product of probabilities, we instead add the log of the probabilities
 
         # calculating smooth_probability_log now that all its variables exist
-        for language in self.smooth_probability_log.keys():
-            self.smooth_probability_log[language] = math.log((smoothing_value/float(self.ngram_portion[language] + smoothing_value*(math.pow(self.vocab_list_size, n_gram_size)))), 10)
+        if (smoothing_value > 0):   # if smoothing value is 0 leave it alone
+            for language in self.smooth_probability_log.keys():
+                self.smooth_probability_log[language] = math.log((smoothing_value/float(self.ngram_portion[language] + smoothing_value*(math.pow(self.vocab_list_size, n_gram_size)))), 10)
         
         # now that we have models with the probabilities, we want to look at the test set to see if we can determine the
         # language of each tweet.
@@ -144,9 +153,13 @@ class NaturalLanguageProcessing:
         f = open(test_name, "r", encoding="utf-8")
         fileInput = f.readline()
 
-        trace_filename = str("trace_" + str(vocabulary) + "_" + str(n_gram_size) + "_" + str(smoothing_value))
+        if(vocabulary==3):
+            vocab_name = "BYOM"
+        else:
+            vocab_name = str(vocabulary)
+        trace_filename = str("trace_" + vocab_name + "_" + str(n_gram_size) + "_" + str(smoothing_value)+".txt")
         solution_trace_file = open(trace_filename, "w", encoding="utf-8")  # this is the trace file that the program will write to
-        overall_eval_filename = str("eval_" + str(vocabulary) + "_" + str(n_gram_size) + "_" + str(smoothing_value))
+        overall_eval_filename = str("eval_" + vocab_name + "_" + str(n_gram_size) + "_" + str(smoothing_value)+".txt")
         overall_eval_file = open(overall_eval_filename, "w", encoding="utf-8")  # this is the eval file that the program will write to
         total_lines = 0
         total_correct = 0
@@ -268,9 +281,6 @@ class NaturalLanguageProcessing:
         else:
             tweet_gram = list(ngrams(tweet, self.n_gram_size))  # leave the tweet as is
 
-        # calculating probability for non existant grams (i.e. smoothing value only) outside of for loop for lessened computation load
-        smooth_probability_log = math.log((self.smoothing_value/float(self.ngram_portion[model] + self.smoothing_value*(math.pow(self.vocab_list_size, self.n_gram_size)))), 10)
-
         for gram in tweet_gram:
             is_gram_in_vocab = True
             for j in range(self.n_gram_size):  # first determine if the gram is in the vocabulary. If not, we wont consider it
@@ -280,7 +290,7 @@ class NaturalLanguageProcessing:
                     is_gram_in_vocab = False
             if is_gram_in_vocab:  # if the gram is actually in the vocabulary
                 if gram not in self.models[model]:  # if the gram is not in the model
-                    probability = probability + smooth_probability_log
+                    probability = probability + self.smooth_probability_log[model]
                 else:  # if the gram is in the model
                     probability = probability + math.log(self.models[model][gram], 10)  # using the addition of log base 10 for the probability
 
@@ -299,7 +309,7 @@ if __name__ == "__main__":
     #nlp.produce_output(0, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.8420
     #nlp.produce_output(1, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.8441
     #nlp.produce_output(2, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.5676
-    nlp.produce_output(0, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.9029
+    #nlp.produce_output(0, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.9029
     #nlp.produce_output(1, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.7704
     #nlp.produce_output(2, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")
 
@@ -313,7 +323,11 @@ if __name__ == "__main__":
     #nlp.produce_output(1, 3, 0.2, "training-tweets.txt", "test-tweets-given.txt")  # accuracy =
     #nlp.produce_output(2, 3, 0.2, "training-tweets.txt", "test-tweets-given.txt")  # accuracy =
 
-    #nlp.produce_output(3, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.9029
+    #nlp.produce_output(0, 1, 0, "training-tweets.txt", "test-tweets-given.txt")  # These 5 are the required test sets
+    #nlp.produce_output(1, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")  
+    #nlp.produce_output(1, 3, 1, "training-tweets.txt", "test-tweets-given.txt")  
+    #nlp.produce_output(2, 2, 0.3, "training-tweets.txt", "test-tweets-given.txt")  
+    #nlp.produce_output(3, 3, 0.3, "training-tweets.txt", "test-tweets-given.txt")  # This is the BYOM with optimal parameters   
 
     print("WE ARE DONE WITH THE TESTS")
 
