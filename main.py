@@ -1,8 +1,6 @@
 #
-# VINCENT CERRI
-# 40034135
-# SEAN HOWARD
-# 26346685
+# VINCENT CERRI - 40034135
+# SEAN HOWARD - 26346685
 # COMP 472 - Artificial Intelligence
 # Sunday, April 5th, 2020
 #
