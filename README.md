@@ -3,6 +3,7 @@ This repository contains all the code for AI project 2 winter 2020.
 
 Group members 
 Vincent Cerri - 40034135
+Sean Howard - 26346685
 
 
 How to use:

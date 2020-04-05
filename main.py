@@ -327,7 +327,9 @@ if __name__ == "__main__":
     #nlp.produce_output(1, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")  
     #nlp.produce_output(1, 3, 1, "training-tweets.txt", "test-tweets-given.txt")  
     #nlp.produce_output(2, 2, 0.3, "training-tweets.txt", "test-tweets-given.txt")  
-    #nlp.produce_output(3, 3, 0.3, "training-tweets.txt", "test-tweets-given.txt")  # This is the BYOM with optimal parameters   
+    #nlp.produce_output(3, 3, 0.01, "training-tweets.txt", "test-tweets-given.txt") # This is the BYOM as submitted, with optimal smoothing value for this test data
+
+    #nlp.produce_output(3, 3, 0.3, "training-tweets.txt", "test-tweets-given.txt")  # This is the BYOM with generally most optimal parameters   
 
     print("WE ARE DONE WITH THE TESTS")
 
