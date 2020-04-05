@@ -40,6 +40,8 @@ class NaturalLanguageProcessing:
         self.vocab_portion = {'ca': 0, 'eu': 0, 'es': 0, 'en': 0, 'gl': 0, 'pt': 0}
         # this tracks the amount of training ngrams per language
         self.ngram_portion = {'ca': 0, 'eu': 0, 'es': 0, 'en': 0, 'gl': 0, 'pt': 0}
+        # This is the probability for non existant grams (i.e. smoothing value only), in log10 space
+        self.smooth_probability_log = {'ca': 0, 'eu': 0, 'es': 0, 'en': 0, 'gl': 0, 'pt': 0}
 
         self.tp_count = {'ca': 0, 'eu': 0, 'es': 0, 'en': 0, 'gl': 0, 'pt': 0}
         self.fp_count = {'ca': 0, 'eu': 0, 'es': 0, 'en': 0, 'gl': 0, 'pt': 0}
@@ -62,9 +64,6 @@ class NaturalLanguageProcessing:
             self.vocab_list = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
                                's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
                                'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
-            self.vocab_list_size = len(self.vocab_list)
-        elif vocabulary == 2:
-            self.vocab_list = []
             self.vocab_list_size = len(self.vocab_list)
 
         # we will start by reading from the training tweets file to create our models
@@ -90,10 +89,9 @@ class NaturalLanguageProcessing:
                     for i in range(n_gram_size):  # loop from 0 to n_gram_size - 1 to determine if the gram is in the vocabulary
                         if not gram[i].isalpha():
                             is_gram_in_vocab = False  # if the gram is not isalpha() then we shouldn't add it to the list
-                    if is_gram_in_vocab:
-                        if gram not in self.vocab_list:  # if the gram is not in the vocab list BUT it isalpha() we want to add it in
+                        elif (gram[i] not in self.vocab_list and gram[i].isalpha()):   # if the gram is not in the vocab list BUT it isalpha() we want to add it in
                             self.vocab_list_size += 1
-                            self.vocab_list.append(gram)
+                            self.vocab_list.append(gram[i])
                 else:  # if vocab == 0 or 1
                     for i in range(n_gram_size):  # loop from 0 to n_gram_size - 1 to determine if the gram is in the vocabulary
                         if gram[i] not in self.vocab_list:
@@ -125,6 +123,10 @@ class NaturalLanguageProcessing:
         # to avoid arithmetic underflow work in log10 space
         # this means that instead of doing the product of probabilities, we instead add the log of the probabilities
 
+        # calculating smooth_probability_log now that all its variables exist
+        for language in self.smooth_probability_log.keys():
+            self.smooth_probability_log[language] = math.log((smoothing_value/float(self.ngram_portion[language] + smoothing_value*(math.pow(self.vocab_list_size, n_gram_size)))), 10)
+        
         # now that we have models with the probabilities, we want to look at the test set to see if we can determine the
         # language of each tweet.
         # read from the test files and try determining the language
