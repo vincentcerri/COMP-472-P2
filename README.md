@@ -6,7 +6,7 @@ Vincent Cerri - 40034135
 
 
 How to use:
-This program is using python v3.6. 
+This program is using python v3.7. 
 
 This program reads tweets from a test file which has the following format:
 
