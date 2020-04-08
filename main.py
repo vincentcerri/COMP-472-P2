@@ -329,5 +329,16 @@ if __name__ == "__main__":
 
     #nlp.produce_output(3, 3, 0.3, "training-tweets.txt", "test-tweets-given.txt")  # This is the BYOM with generally most optimal parameters   
 
+
+
+    nlp.produce_output(0, 2, 0.01, "training-tweets.txt", "test8.txt")  # test 1
+    nlp.produce_output(2, 2, 0.5, "training-tweets.txt", "test8.txt")   # test 2
+    nlp.produce_output(3, 3, 0.3, "training-tweets.txt", "test8.txt")   # BYOM test
+
+    #1 - V = 0, n = 2, d = 0.01
+    #2 - V = 2, n = 2, d = 0.5
+    #3 - BYOM
+
+
     print("WE ARE DONE WITH THE TESTS")
 
