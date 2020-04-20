@@ -88,12 +88,33 @@ class NaturalLanguageProcessing:
         f = open(train_name, "r", encoding="utf8")
         fileInput = f.readline()
 
+        ca_test_language_count = 0
+        eu_test_language_count = 0
+        es_test_language_count = 0
+        en_test_language_count = 0
+        gl_test_language_count = 0
+        pt_test_language_count = 0
+
+
         # this is the loop that reads the file input line by line
         while fileInput:
             language = fileInput.split("\t")[2]
             string_to_add = fileInput.split("\t")[3]
             self.vocab_portion[language] += 1
             self.total_vocab += 1
+
+            if language == "eu":
+                eu_test_language_count += 1
+            elif language == "ca":
+                ca_test_language_count += 1
+            elif language == "es":
+                es_test_language_count += 1
+            elif language == "en":
+                en_test_language_count += 1
+            elif language == "gl":
+                gl_test_language_count += 1
+            elif language == "pt":
+                pt_test_language_count += 1
 
             if vocabulary == 0:
                 my_ngram = list(ngrams(string_to_add.lower(), n_gram_size))  # convert the tweet to lower case
@@ -127,6 +148,15 @@ class NaturalLanguageProcessing:
 
             fileInput = f.readline()
         f.close()
+
+        print("ca: " + str(ca_test_language_count))
+        print("eu: " + str(eu_test_language_count))
+        print("es: " + str(es_test_language_count))
+        print("en: " + str(en_test_language_count))
+        print("gl: " + str(gl_test_language_count))
+        print("pt: " + str(pt_test_language_count))
+
+
 
         # lets convert each of the models to a probability instead of a count. We should also apply the smoothing value here
         for language, dictionary in self.models.items():
@@ -162,6 +192,13 @@ class NaturalLanguageProcessing:
         total_lines = 0
         total_correct = 0
 
+        ca_test_language_count = 0
+        eu_test_language_count = 0
+        es_test_language_count = 0
+        en_test_language_count = 0
+        gl_test_language_count = 0
+        pt_test_language_count = 0
+
         # this is the loop that reads the file input line by line
         while fileInput:
             # print(fileInput)
@@ -169,6 +206,21 @@ class NaturalLanguageProcessing:
             tweet_author = fileInput.split("\t")[1]
             tweet_language = fileInput.split("\t")[2]
             tweet = fileInput.split("\t")[3]
+
+            if tweet_language == "eu":
+                eu_test_language_count += 1
+            elif tweet_language == "ca":
+                ca_test_language_count += 1
+            elif tweet_language == "es":
+                es_test_language_count += 1
+            elif tweet_language == "en":
+                en_test_language_count += 1
+            elif tweet_language == "gl":
+                gl_test_language_count += 1
+            elif tweet_language == "pt":
+                pt_test_language_count += 1
+
+
 
             if vocabulary == 3:
                 tweet = self.clean_string(tweet)
@@ -190,6 +242,14 @@ class NaturalLanguageProcessing:
             solution_trace_file.write((tweet_id + "  " + language + "  " + str("{:.2E}".format(Decimal(self.trace_probability))) + "  " + tweet_language + "  " + language_match + "\n"))
 
             fileInput = f.readline()
+
+        print("Test file results: ")
+        print("ca: " + str(ca_test_language_count))
+        print("eu: " + str(eu_test_language_count))
+        print("es: " + str(es_test_language_count))
+        print("en: " + str(en_test_language_count))
+        print("gl: " + str(gl_test_language_count))
+        print("pt: " + str(pt_test_language_count))
 
         # calculate the accuracy
         accuracy = float(total_correct / total_lines)
@@ -262,7 +322,7 @@ class NaturalLanguageProcessing:
         return stringClean
 
     def determine_language(self, tweet):
-        best_probability = 0.0  # 1.0 is the highest possible probability so we will update this value with the calculated results
+        best_probability = -100.0  # 1.0 is the highest possible probability so we will update this value with the calculated results
         language = ""
         for model in self.models:
             new_probability = self.determine_probability(model, tweet)
@@ -284,7 +344,7 @@ class NaturalLanguageProcessing:
             for j in range(self.n_gram_size):  # first determine if the gram is in the vocabulary. If not, we wont consider it
                 if (self.vocabulary == 2 and not gram[j].isalpha()):     
                     is_gram_in_vocab = False    # for vocabulary 2, any isalpha is in vocab
-                elif gram[j] not in self.vocab_list:
+                elif (self.vocabulary != 2 and gram[j] not in self.vocab_list):
                     is_gram_in_vocab = False
             if is_gram_in_vocab:  # if the gram is actually in the vocabulary
                 if gram not in self.models[model]:  # if the gram is not in the model
@@ -310,6 +370,28 @@ if __name__ == "__main__":
     #nlp.produce_output(0, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.9029
     #nlp.produce_output(1, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.7704
     #nlp.produce_output(2, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")
+    #nlp.produce_output(3, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")
+
+    nlp.produce_output(0, 2, 0.0, "training-tweets.txt", "test-tweets-given.txt")
+    nlp.produce_output(0, 2, 0.3, "training-tweets.txt", "test-tweets-given.txt")
+    nlp.produce_output(0, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")
+    nlp.produce_output(0, 2, 0.9, "training-tweets.txt", "test-tweets-given.txt")
+
+    nlp.produce_output(0, 3, 0.0, "training-tweets.txt", "test-tweets-given.txt")
+    nlp.produce_output(0, 3, 0.3, "training-tweets.txt", "test-tweets-given.txt")
+    nlp.produce_output(0, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")
+    nlp.produce_output(0, 3, 0.9, "training-tweets.txt", "test-tweets-given.txt")
+
+
+
+    #nlp.produce_output(3, 3, 0.0, "training-tweets.txt", "test8.txt") # accuracy = 85.02
+    #nlp.produce_output(3, 3, 0.3, "training-tweets.txt", "test8.txt") # accuracy = 85.02
+    #nlp.produce_output(3, 3, 0.5, "training-tweets.txt", "test8.txt") # accuracy = 85.02
+    #nlp.produce_output(3, 3, 0.9, "training-tweets.txt", "test8.txt") # accuracy = 85.02
+
+    #nlp.produce_output(1, 3, 0.5, "training-tweets.txt", "test8.txt")
+    #nlp.produce_output(2, 3, 0.5, "training-tweets.txt", "test8.txt")
+    #nlp.produce_output(3, 3, 0.5, "training-tweets.txt", "test8.txt")
 
     #nlp.produce_output(0, 1, 0.2, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.6831
     #nlp.produce_output(1, 1, 0.2, "training-tweets.txt", "test-tweets-given.txt")  # accuracy = 0.6970
@@ -327,13 +409,13 @@ if __name__ == "__main__":
     #nlp.produce_output(2, 2, 0.3, "training-tweets.txt", "test-tweets-given.txt")  
     #nlp.produce_output(3, 3, 0.01, "training-tweets.txt", "test-tweets-given.txt") # This is the BYOM as submitted, with optimal smoothing value for this test data
 
-    #nlp.produce_output(3, 3, 0.3, "training-tweets.txt", "test-tweets-given.txt")  # This is the BYOM with generally most optimal parameters   
+    #nlp.produce_output(3, 3, 0.3, "training-tweets.txt", "test-tweets-given.txt")  # This is the BYOM with generally most optimal parameters
+    #nlp.produce_output(3, 3, 0.3, "training-tweets.txt", "test8.txt")  # This is the BYOM with generally most optimal parameters
 
 
-
-    nlp.produce_output(0, 2, 0.01, "training-tweets.txt", "test8.txt")  # test 1
-    nlp.produce_output(2, 2, 0.5, "training-tweets.txt", "test8.txt")   # test 2
-    nlp.produce_output(3, 3, 0.3, "training-tweets.txt", "test8.txt")   # BYOM test
+    #nlp.produce_output(0, 2, 0.01, "training-tweets.txt", "test8.txt")  # test 1
+    #nlp.produce_output(2, 2, 0.5, "training-tweets.txt", "test8.txt")   # test 2
+    #nlp.produce_output(3, 3, 0.3, "training-tweets.txt", "test8.txt")   # BYOM test
 
     #1 - V = 0, n = 2, d = 0.01
     #2 - V = 2, n = 2, d = 0.5
