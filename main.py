@@ -372,19 +372,32 @@ if __name__ == "__main__":
     #nlp.produce_output(2, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")
     #nlp.produce_output(3, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")
 
-    nlp.produce_output(0, 2, 0.0, "training-tweets.txt", "test-tweets-given.txt")
-    nlp.produce_output(0, 2, 0.3, "training-tweets.txt", "test-tweets-given.txt")
-    nlp.produce_output(0, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")
-    nlp.produce_output(0, 2, 0.9, "training-tweets.txt", "test-tweets-given.txt")
+    #nlp.produce_output(0, 2, 0.0, "training-tweets.txt", "test-tweets-given.txt")
+    #nlp.produce_output(0, 2, 0.3, "training-tweets.txt", "test-tweets-given.txt")
+    #nlp.produce_output(0, 2, 0.5, "training-tweets.txt", "test-tweets-given.txt")
+    #nlp.produce_output(0, 2, 0.9, "training-tweets.txt", "test-tweets-given.txt")
 
-    nlp.produce_output(0, 3, 0.0, "training-tweets.txt", "test-tweets-given.txt")
-    nlp.produce_output(0, 3, 0.3, "training-tweets.txt", "test-tweets-given.txt")
-    nlp.produce_output(0, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")
-    nlp.produce_output(0, 3, 0.9, "training-tweets.txt", "test-tweets-given.txt")
+    #nlp.produce_output(0, 3, 0.0, "training-tweets.txt", "test-tweets-given.txt")
+    #nlp.produce_output(0, 3, 0.3, "training-tweets.txt", "test-tweets-given.txt")
+    #nlp.produce_output(0, 3, 0.5, "training-tweets.txt", "test-tweets-given.txt")
+    #nlp.produce_output(0, 3, 0.9, "training-tweets.txt", "test-tweets-given.txt")
 
 
 
-    #nlp.produce_output(3, 3, 0.0, "training-tweets.txt", "test8.txt") # accuracy = 85.02
+    nlp.produce_output(0, 2, 0.3, "training-tweets.txt", "test8.txt") # accuracy = 85.02
+    nlp.produce_output(0, 3, 0.3, "training-tweets.txt", "test8.txt") # accuracy = 85.02
+    nlp.produce_output(1, 2, 0.3, "training-tweets.txt", "test8.txt") # accuracy = 85.02
+    nlp.produce_output(1, 3, 0.3, "training-tweets.txt", "test8.txt") # accuracy = 85.02
+    nlp.produce_output(2, 2, 0.3, "training-tweets.txt", "test8.txt") # accuracy = 85.02
+    nlp.produce_output(2, 3, 0.3, "training-tweets.txt", "test8.txt") # accuracy = 85.02
+    nlp.produce_output(3, 2, 0.3, "training-tweets.txt", "test8.txt") # accuracy = 85.02
+    nlp.produce_output(3, 3, 0.3, "training-tweets.txt", "test8.txt") # accuracy = 85.02
+
+
+
+
+
+
     #nlp.produce_output(3, 3, 0.3, "training-tweets.txt", "test8.txt") # accuracy = 85.02
     #nlp.produce_output(3, 3, 0.5, "training-tweets.txt", "test8.txt") # accuracy = 85.02
     #nlp.produce_output(3, 3, 0.9, "training-tweets.txt", "test8.txt") # accuracy = 85.02
